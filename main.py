@@ -1,6 +1,8 @@
 import os
 import requests
 import sys
+import zipfile
+import gzip
 
 def downloading(date, mainpath):
     file_name = f"{mainpath}/data/{date[0:4]}/{date[5:]}.zip"
@@ -43,6 +45,11 @@ def main(date_str):
     except Exception as exp:
         print("Сбой загрузки", exp)
         exit()
+
+    zip_path = os.path.join(mainpath, "data", date_str[:4], date_str[5:] + ".zip")
+    extract_path = os.path.join(mainpath, "data", date_str[:4], date_str[5:])
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_path)
 
 
 date = '2023-01-03'
