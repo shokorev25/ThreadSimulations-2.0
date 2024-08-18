@@ -6,6 +6,7 @@ import sys
 import gzip
 import schedule
 import time
+import shutil
 
 date = sys.argv[1]
 
@@ -47,7 +48,16 @@ def downloading():
 
     return True
 
+def clean_folder(folder_name):
+    for filename in os.listdir(folder_name):
+        file_path = os.path.join(folder_name, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
 def daily_downloading():
+    clean_folder(os.path.join(main_path, 'rnx_files'))
 
     attempt = 0
     check = False
