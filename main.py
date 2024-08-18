@@ -4,6 +4,7 @@ import sys
 import zipfile
 import gzip
 
+
 def downloading(date, mainpath):
     file_name = f"{mainpath}/data/{date[0:4]}/{date[5:]}.zip"
     link = f"https://api.simurg.space/datafiles/map_files?date={date}"
@@ -50,6 +51,14 @@ def main(date_str):
     extract_path = os.path.join(mainpath, "data", date_str[:4], date_str[5:])
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(extract_path)
+
+    for filename in os.listdir(extract_path):
+        filepath = os.path.join(extract_path, filename).replace('\\', '/')
+        if filename.endswith(".crx.gz"):
+
+            with gzip.open(filepath, 'rb') as f_in:
+                with open(filepath[:-3], 'wb') as f_out:
+                    f_out.write(f_in.read())
 
 
 date = '2023-01-03'
