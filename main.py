@@ -3,7 +3,7 @@ import requests
 import sys
 import zipfile
 import gzip
-
+import subprocess
 
 def downloading(date, mainpath):
     file_name = f"{mainpath}/data/{date[0:4]}/{date[5:]}.zip"
@@ -60,6 +60,15 @@ def main(date_str):
                 with open(filepath[:-3], 'wb') as f_out:
                     f_out.write(f_in.read())
 
+            buf = filename[:-3]
+            subprocess.run([os.path.join(mainpath, "python", "CRX2RNX.exe").replace('\\', '/'),
+                            os.path.join(mainpath, "data", date_str[:4], date_str[5:], buf).replace('\\', '/')])
+
+            buf = buf[:-4]
+            buf += ".rnx"
+
+            os.rename(os.path.join(mainpath, "data", date_str[:4], date_str[5:], buf).replace('\\', '/'),
+                      os.path.join(mainpath, "rnx_files", buf).replace('\\', '/'))
 
 date = '2023-01-03'
 # date = sys.argv[1]
