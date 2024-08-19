@@ -1,15 +1,19 @@
 import paho.mqtt.client as mqtt_client
 import hashlib
 import datetime
+import sys
+# import systemd.daemon
 import os
 import time
-from gnss_tec import rnx
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from gnss_tec import rnx
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace('\\', '/')
+# filename = sys.argv[1]
 filename = "ABPO00MDG_R_20230020000_01D_30S_MO.rnx"
 
+will_stop = False
 check_fullpath = ''
 
 
@@ -46,9 +50,26 @@ def get_data():
         exit()
 
 
+def check_new_data():
+    global check_fullpath
+
+    extract_path = os.path.join(main_path, 'rnx_files')
+
+    for file in os.listdir(extract_path):
+        if filename[0:11] in file:
+            if check_fullpath != os.path.join(main_path, 'rnx_files', file):
+                check_fullpath = os.path.join(main_path, 'rnx_files', file)
+                return True
+            else:
+                return False
+
+    return False
+
+
 def update_data():
     global new_data
     global check_fullpath
+    global will_stop
     fullpath = ''
 
     extract_path = os.path.join(main_path, 'rnx_files')
@@ -77,6 +98,7 @@ def update_data():
     except FileNotFoundError:
         print('Файл не найден')
         print('Паблишер прекратит работу')
+        will_stop = True
 
 
 def broker_setup():
@@ -90,8 +112,10 @@ def broker_setup():
         user_id[0:12]
     )
 
+    print("Connecting to broker", broker)
     client.connect(broker)
     client.loop()
+    print("Publishing")
 
     return client
 
@@ -114,8 +138,11 @@ def publishing():
     current_data = new_data
 
     for text in current_data:
+        if datetime.datetime.now().strftime("%H:%M:%S") == "23:59:58":
+            break
 
-        if parsing_current_time == text.split()[1]:
+        if parsing_current_time == text.split()[1] and datetime.datetime.now().strftime("%S") != "27"\
+                and datetime.datetime.now().strftime("%S") != "57":
             client.publish("info/" + filename[0:9], text)
         else:
             wait_time = round_time(datetime.datetime.now())
@@ -127,13 +154,15 @@ def publishing():
 
             while datetime.datetime.now().strftime("%H:%M:%S") != wait_time:
                 time.sleep(0.001)
+                if wait_time.endswith('00') and check_new_data():
+                    return True
 
             client.publish("info/" + filename[0:9], text)
 
         print("message is " + text)
 
+    return False
 
-client = broker_setup()
 
 new_data = get_data()
 
@@ -144,9 +173,15 @@ if datetime.datetime.now().strftime("%H") == "23" or datetime.datetime.now().str
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_data, trigger=CronTrigger(hour=23, minute=50))
 scheduler.start()
+# systemd.daemon.notify('READY=1')
 
-while True:
-    publishing()
+client = broker_setup()
 
 
+while not will_stop:
+    if publishing():
+        update_data()
+
+
+exit()
 
