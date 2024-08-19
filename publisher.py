@@ -4,13 +4,17 @@ import datetime
 import os
 import time
 from gnss_tec import rnx
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace('\\', '/')
 filename = "ABPO00MDG_R_20230020000_01D_30S_MO.rnx"
 
+check_fullpath = ''
 
 
 def get_data():
+    global check_fullpath
 
     data = []
     fullpath = ''
@@ -19,23 +23,60 @@ def get_data():
     for file in os.listdir(extract_path):
         if filename in file:
             fullpath = os.path.join(main_path, 'rnx_files', file)
+            check_fullpath = fullpath
+
+    try:
+        with open(fullpath) as obs_file:
+            reader = rnx(obs_file)
+
+            for tec in reader:
+                state = '{} {}: {} {}'.format(
+                    tec.timestamp,
+                    tec.satellite,
+                    tec.phase_tec,
+                    tec.p_range_tec,
+                )
+
+                data.append(state)
+
+        return data
+
+    except FileNotFoundError:
+        print('Файл не найден')
+        exit()
 
 
-    with open(fullpath) as obs_file:
-        reader = rnx(obs_file)
+def update_data():
+    global new_data
+    global check_fullpath
+    fullpath = ''
 
-        for tec in reader:
-            state = '{} {}: {} {}'.format(
-                tec.timestamp,
-                tec.satellite,
-                tec.phase_tec,
-                tec.p_range_tec,
-            )
+    extract_path = os.path.join(main_path, 'rnx_files')
+    for file in os.listdir(extract_path):
+        if filename[0:11] in file:
+            fullpath = os.path.join(main_path, 'rnx_files', file)
+            check_fullpath = fullpath
 
-            data.append(state)
+    data = []
+    try:
+        with open(fullpath) as obs_file:
+            reader = rnx(obs_file)
 
-    return data
+            for tec in reader:
+                state = '{} {}: {} {}'.format(
+                        tec.timestamp,
+                        tec.satellite,
+                        tec.phase_tec,
+                        tec.p_range_tec,
+                    )
 
+                data.append(state)
+
+        new_data = data
+
+    except FileNotFoundError:
+        print('Файл не найден')
+        print('Паблишер прекратит работу')
 
 
 def broker_setup():
@@ -95,6 +136,14 @@ def publishing():
 client = broker_setup()
 
 new_data = get_data()
+
+if datetime.datetime.now().strftime("%H") == "23" or datetime.datetime.now().strftime("%H") == "22":
+    while datetime.datetime.now().strftime("%H:%M:%S") != "23:59:35":
+        time.sleep(0.001)
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(update_data, trigger=CronTrigger(hour=23, minute=50))
+scheduler.start()
 
 while True:
     publishing()
