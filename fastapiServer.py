@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
+import subprocess
 
 app = FastAPI()
 templates = Jinja2Templates(directory="python/templates")
@@ -41,3 +42,24 @@ async def receivers_data(request: Request) -> StreamingResponse:
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
+
+
+def check_service_status(service_name):
+    try:
+        output = subprocess.check_output(f"systemctl status {service_name}", shell=True)
+        return "active" in output.decode("utf-8")
+    except Exception:
+        return False
+
+
+@app.post("/getTopicList")
+async def get_topic_list():
+    response = {"topics": []}
+
+    extract_path = os.path.join(main_path, "rnx_files")
+
+    for filename in os.listdir(extract_path):
+        filepath = os.path.join(extract_path, filename).replace('\\', '/')
+
+        if check_service_status(filename[0:11]):
+            response['topics'].append(f"thread_sim/{filename}")
