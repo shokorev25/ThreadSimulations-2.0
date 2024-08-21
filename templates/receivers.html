@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Creating Real-Time Charts with Flask</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+	<div class="message-container-wrapper">
+		<div id="message-container"></div>
+	</div>
+</div>
+
+<script>
+	source.onmessage = function (event) {
+		const data = JSON.parse(event.data);
+		if (config.data.labels.length === 20) {
+			config.data.labels.shift();
+			config.data.datasets[0].data.shift();
+		}
+		config.data.labels.push(data.time);
+		config.data.datasets[0].data.push(data.value);
+		lineChart.update();
+	}
+</script>
+</body>
+</html>
