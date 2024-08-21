@@ -132,6 +132,12 @@ def round_time(dt):
     return result.strftime("%H:%M:%S")
 
 
+def write_data(data_str):
+    write_path = os.path.join(main_path, 'parsed_data.txt')
+    with open(write_path, 'a') as f:
+        f.write(filename[0:11] + ' ' + data_str + '\n')
+
+
 def publishing():
     global new_data
     parsing_current_time = -1
@@ -143,7 +149,8 @@ def publishing():
 
         if parsing_current_time == text.split()[1] and datetime.datetime.now().strftime("%S") != "27"\
                 and datetime.datetime.now().strftime("%S") != "57":
-            client.publish("info/" + filename[0:9], text)
+            client.publish("info/" + filename[0:11], text)
+            write_data(text)
         else:
             wait_time = round_time(datetime.datetime.now())
 
@@ -157,7 +164,8 @@ def publishing():
                 if wait_time.endswith('00') and check_new_data():
                     return True
 
-            client.publish("info/" + filename[0:9], text)
+            client.publish("info/" + filename[0:11], text)
+            write_data(text)
 
         print("message is " + text)
 
