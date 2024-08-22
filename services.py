@@ -14,12 +14,19 @@ def services(archive_name, main_path):
 
     service_file = f"/etc/systemd/system/{archive_name}_publisher.service"
 
-    with open(service_file, "w") as f:
-        with open(f"{main_path}/sample.txt", "r") as template:
-            path_to_publisher = os.path.join(main_path, "publisher.py")
-            text = template.read().replace('ExecStart=/usr/bin/python3',
-                                           f'ExecStart=/usr/bin/python3 {path_to_publisher} {archive_name}')
-            f.write(text)
+    if not os.path.isfile(service_file):
+        with open(service_file, "w") as f:
+            with open(f"{main_path}/sample.txt", "r") as template:
+                path_to_publisher = os.path.join(main_path, "python", "publisher.py")
+                text = template.read().replace('ExecStart=/usr/bin/python3',
+                                               f'ExecStart=/usr/bin/python3 {path_to_publisher} {archive_name}')
+                f.write(text)
 
-    subprocess.run(["sudo", "systemctl", "enable", service_file])
-    subprocess.run(["sudo", "systemctl", "start", f"{archive_name}_publisher.service"])
+        subprocess.run(["sudo", "systemctl", "enable", service_file])
+        subprocess.run(["sudo", "systemctl", "start", f"{archive_name}_publisher.service"])
+
+    else:
+        if not check_service_status(f"{archive_name}_publisher.service"):
+            subprocess.run(["sudo", "systemctl", "enable", service_file])
+            subprocess.run(["sudo", "systemctl", "restart", f"{archive_name}_publisher.service"])
+
