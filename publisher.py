@@ -50,6 +50,15 @@ def get_data():
         exit()
 
 
+def update_check_fullpath():
+    global check_fullpath
+    extract_path = os.path.join(main_path, 'rnx_files')
+
+    for file in os.listdir(extract_path):
+        if filename[0:11] in file:
+            check_fullpath = os.path.join(main_path, 'rnx_files', file)
+
+
 def check_new_data():
     global check_fullpath
 
@@ -142,6 +151,7 @@ def publishing():
     global new_data
     parsing_current_time = -1
     current_data = new_data
+    updated = False
 
     for text in current_data:
         if datetime.datetime.now().strftime("%H:%M:%S") == "23:59:58":
@@ -161,6 +171,11 @@ def publishing():
 
             while datetime.datetime.now().strftime("%H:%M:%S") != wait_time:
                 time.sleep(0.001)
+
+                if datetime.datetime.now().strftime("%H") == 22 and not updated:
+                    update_check_fullpath()
+                    updated = True
+
                 if wait_time.endswith('00') and check_new_data():
                     return True
 
@@ -192,4 +207,3 @@ while not will_stop:
 
 
 exit()
-
