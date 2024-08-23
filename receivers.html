@@ -108,6 +108,11 @@
 		message_container.append(bufferSearched);
 	})
 
+	document.getElementById('reset_button').addEventListener('click', event => {
+		searchWord = '';
+		message_container.innerHTML = '';
+		message_container.append(bufferAll);
+	});
 
 	source.onmessage = function (event) {
 		const data = JSON.parse(event.data);
