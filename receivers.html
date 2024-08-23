@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Мониторинг</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+	<style>
+		body {
+			background-color: #D6EAF8;
+		}
+
+		.message-container-wrapper {
+			background-color: #ffffff;
+			padding: 40px;
+			border-radius: 0 0 10px 10px;
+			height: 500px;
+		}
+
+		.searchBlock {
+			padding: 16px;
+			background-color: #F2F3F4;
+
+		}
+
+		label {
+			margin-right: 8px;
+		}
+
+		#message-container {
+			background-color: #EBEDEF;
+			padding: 16px;
+			border-radius: 10px;
+			overflow:scroll;
+			overflow-x:hidden;
+			height: 430px;
+		}
+
+		.line {
+			font-weight: 400;
+		}
+
+		.search_button {
+			margin-left: 16px;
+			padding-left: 8px;
+			padding-right: 8px;
+			background-color: #ABEBC6;
+			border-radius: 4px;
+		}
+
+		.search_button:hover {
+			background-color: #94cbab;
+		}
+
+		.reset_button {
+			margin-left: 16px;
+			padding-left: 8px;
+			padding-right: 8px;
+			background-color: #F1948A;
+			border-radius: 4px;
+		}
+
+		.reset_button:hover {
+			background-color: #c37b73;
+		}
+
+	</style>
+</head>
+<body>
+
+<div class="container">
+	<form id="search_form">
+		<div class="searchBlock">
+			<label>Введите название приемника:</label>
+			<input type="text" name="search">
+			<button type="submit" class="search_button" id="search_button">Искать</button>
+			<button type="button" class="reset_button" id="reset_button">Сбросить</button>
+		</div>
+	</form>
+	<div class="message-container-wrapper">
+		<div id="message-container"></div>
+	</div>
+
+</div>
+
+<script>
+	const mainForm = document.getElementById("search_form");
+	const message_container = document.getElementById('message-container');
+
+	let bufferSearched = document.createElement('div');
+	let bufferAll = document.createElement('div');
+	let searchWord = '';
+
+	mainForm.addEventListener('submit', event => {
+		event.preventDefault();
+
+		searchWord = mainForm['search'].value;
+		bufferSearched.innerHTML = '';
+
+		for (elem of bufferAll.children) {
+			if (elem.tagName === 'SPAN' && elem.textContent.includes(searchWord)) {
+				bufferSearched.append(elem.cloneNode(true));
+				bufferSearched.append(document.createElement('br'));
+			}
+		}
+
+		message_container.innerHTML = '';
+		message_container.append(bufferSearched);
+	})
+
+
+	source.onmessage = function (event) {
+		const data = JSON.parse(event.data);
+		if (config.data.labels.length === 20) {
+			config.data.labels.shift();
+			config.data.datasets[0].data.shift();
+		}
+		config.data.labels.push(data.time);
+		config.data.datasets[0].data.push(data.value);
+		lineChart.update();
+	}
+</script>
+</body>
+</html>
