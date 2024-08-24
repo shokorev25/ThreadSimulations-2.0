@@ -93,6 +93,7 @@
 
 	mainForm.addEventListener('submit', event => {
 		event.preventDefault();
+		const message_container = document.getElementById('message-container');
 
 		searchWord = mainForm['search'].value;
 		bufferSearched.innerHTML = '';
@@ -114,16 +115,47 @@
 		message_container.append(bufferAll);
 	});
 
-	source.onmessage = function (event) {
-		const data = JSON.parse(event.data);
-		if (config.data.labels.length === 20) {
-			config.data.labels.shift();
-			config.data.datasets[0].data.shift();
+
+
+	const eventSource = new EventSource('/data');
+    eventSource.onmessage = (event) => {
+    	// Получаем HTML код из события
+    	const data = event.data.replace('[', '').replace(']', '').split(',');
+
+		message_container.innerHTML = '';
+		bufferAll.innerHTML = '';
+		bufferSearched.innerHTML = '';
+
+		for (line of data) {
+			const linespan = document.createElement('span');
+
+			linespan.textContent = line;
+
+			linespan.classList.add('line');
+
+			bufferAll.append(linespan);
+			bufferAll.append(document.createElement('br'));
+
+			if (searchWord !== '' && line.includes(searchWord)) {
+				bufferSearched.append(linespan.cloneNode(true));
+				bufferSearched.append(document.createElement('br'));
+			}
 		}
-		config.data.labels.push(data.time);
-		config.data.datasets[0].data.push(data.value);
-		lineChart.update();
-	}
+
+		if (searchWord !== '') {
+			message_container.append(bufferSearched);
+		}
+		else {
+			message_container.append(bufferAll);
+		}
+
+    };
+
+    eventSource.onerror = (event) => {
+    	console.error('Error connecting to the server:', event);
+    };
+
+
 </script>
 </body>
 </html>
