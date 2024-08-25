@@ -29,3 +29,32 @@
 
 ![FastAPI](https://github.com/user-attachments/assets/8a51150c-06e6-4db8-b035-c49a2d428f1f)
 
+### Установка и запуск приложения:
+
+1) Создайте и перейдите в папку `thread_sim` и склонируйте репозиторий:
+```sh
+mkdir thread_sim
+cd thread_sim
+git clone https://github.com/shokorev25/ThreadSimulations-2.0
+
+```
+2) Установите pip и зависимости, которые находятся в файле `requirements.txt`:
+```sh
+sudo apt install python3-pip
+pip install -r requirements.txt
+```
+3) Установка uvicorn для FastAPI:
+
+```sh
+sudo apt install uvicorn
+```
+
+! Если вы запускаете проект локально, то откройте браузер и перейдите по адресу `http://127.0.0.1:8000/docs`, если вы запускаете его с виртуальной машины Яндекса, то перейдите по адресу `http://IP_вашей_ВМ:8000/docs`
+
+4) Запуск скриптов приложения:
+
+```sh
+python3 ./main.py <дата данных>
+python3 ./daily.py <дата данных>
+uvicorn fastapiServer:app --reload --port 8000 --host 0.0.0.0
+```
