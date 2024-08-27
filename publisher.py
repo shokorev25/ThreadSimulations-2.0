@@ -141,8 +141,14 @@ def round_time(dt):
     return result.strftime("%H:%M:%S")
 
 
-def write_data(data_str):
-    write_path = os.path.join(main_path, 'parsed_data.txt')
+def write_data(data_str, new):
+    write_path = f"{main_path}/txt_files/{filename[0:11]}.txt"
+
+    if not(os.path.exists(write_path)) or new:
+        my_file = open(write_path, "w")
+        my_file.write("")
+        my_file.close()
+
     with open(write_path, 'a') as f:
         f.write(filename[0:11] + ' ' + data_str + '\n')
 
@@ -160,7 +166,7 @@ def publishing():
         if parsing_current_time == text.split()[1] and datetime.datetime.now().strftime("%S") != "27"\
                 and datetime.datetime.now().strftime("%S") != "57":
             client.publish("info/" + filename[0:11], text)
-            write_data(text)
+            write_data(text, False)
         else:
             wait_time = round_time(datetime.datetime.now())
 
@@ -180,7 +186,7 @@ def publishing():
                     return True
 
             client.publish("info/" + filename[0:11], text)
-            write_data(text)
+            write_data(text, True)
 
         print("message is " + text)
 
@@ -189,9 +195,9 @@ def publishing():
 
 new_data = get_data()
 
-if datetime.datetime.now().strftime("%H") == "23" or datetime.datetime.now().strftime("%H") == "22":
-    while datetime.datetime.now().strftime("%H:%M:%S") != "23:59:35":
-        time.sleep(0.001)
+# if datetime.datetime.now().strftime("%H") == "23" or datetime.datetime.now().strftime("%H") == "22":
+#     while datetime.datetime.now().strftime("%H:%M:%S") != "23:59:35":
+#         time.sleep(0.001)
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_data, trigger=CronTrigger(hour=23, minute=50))
@@ -207,3 +213,4 @@ while not will_stop:
 
 
 exit()
+
