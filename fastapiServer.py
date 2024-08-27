@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
 import subprocess
+import datetime
 
 app = FastAPI()
 templates = Jinja2Templates(directory="python/templates")
@@ -21,24 +22,27 @@ async def index(request: Request) -> templates.TemplateResponse:
     return templates.TemplateResponse("receivers.html", {"request": request})
 
 
-async def generate_random_data(request: Request) -> Iterator[str]:
-
-    # client_ip = request.client.host
-
-    write_path = os.path.join(main_path, 'parsed_data.txt')
-
+async def generate_data(request: Request) -> Iterator[str]:
     while True:
         data = []
-        with open(write_path, 'r') as f:
-            for s in f:
-                data.append(s.strip())
+        extract_path = os.path.join(main_path, "txt_files")
+
+        for filename in os.listdir(extract_path):
+            filepath = os.path.join(extract_path, filename).replace('\\', '/')
+
+            with open(filepath, 'r') as f:
+                for s in f:
+                    data.append(s.strip())
+
+        while datetime.datetime.now().strftime("%S") != "45" and datetime.datetime.now().strftime("%S") != "15":
+            await asyncio.sleep(0.001)
+
         yield f"data: {data}\n\n"
-        await asyncio.sleep(5)
 
 
 @app.get("/data")
 async def receivers_data(request: Request) -> StreamingResponse:
-    response = StreamingResponse(generate_random_data(request), media_type="text/event-stream")
+    response = StreamingResponse(generate_data(request), media_type="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
