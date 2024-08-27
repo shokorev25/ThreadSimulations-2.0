@@ -7,6 +7,9 @@ import gzip
 import schedule
 import time
 import shutil
+import datetime
+
+from services import services
 
 date = sys.argv[1]
 
@@ -57,6 +60,9 @@ def clean_folder(folder_name):
             shutil.rmtree(file_path)
 
 def daily_downloading():
+    global date
+    date = (datetime.datetime.strptime(date, '%Y-%m-%d') + datetime.timedelta(days=1)).strftime("%H:%M:%S")
+
     clean_folder(os.path.join(main_path, 'rnx_files'))
 
     attempt = 0
@@ -99,6 +105,8 @@ def daily_downloading():
 
             os.rename(os.path.join(main_path, "data", date[:4], date[5:], filename2).replace('\\', '/'),
                       os.path.join(main_path, "rnx_files", filename2).replace('\\', '/'))
+
+            services(filename2, main_path)
 
 schedule.every().day.at("22:00").do(daily_downloading)
 
