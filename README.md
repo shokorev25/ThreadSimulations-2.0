@@ -36,7 +36,7 @@
 mkdir thread_sim
 cd thread_sim
 git clone https://github.com/shokorev25/ThreadSimulations-2.0
-
+chmod +x CRX2RNX
 ```
 2) Установите pip и зависимости, которые находятся в файле `requirements.txt`:
 ```sh
@@ -54,7 +54,18 @@ sudo apt install uvicorn
 4) Запуск скриптов приложения:
 
 ```sh
-python3 ./main.py <дата данных>
-python3 ./daily.py <дата данных>
+sudo python3 ./main.py <дата данных>
+sudo python3 ./daily.py <дата данных>
 uvicorn fastapiServer:app --reload --port 8000 --host 0.0.0.0
 ```
+
+### FastAPI
+Cерверная часть веб-приложения, которое предоставляет два основных функционала:
+
+##### Отображение списка тем:
+Этот маршрут отвечает на HTTP-запрос GET по адресу ```/getTopicList```.
+Проверяются работающие на текущий момент сервисы и возвращается JSON-ответ с полученным списком тем.
+
+##### Потоковая передача данных:
+Этот маршрут отвечает на HTTP-запрос GET по адресу ```/```.
+Предоставление данных в формате "Server-Sent Events" (SSE) с использованием шаблонов Jinja2 для отрисовки HTML страницы.
