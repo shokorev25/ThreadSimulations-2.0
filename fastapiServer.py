@@ -11,11 +11,11 @@ import subprocess
 import datetime
 
 app = FastAPI()
-templates = Jinja2Templates(directory="python/templates")
+templates = Jinja2Templates(directory="templates")
 random.seed()
 
 
-main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace('\\', '/')
+main_path = os.path.abspath(os.path.join(os.path.dirname(__file__))).replace('\\', '/')
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> templates.TemplateResponse:
@@ -48,22 +48,22 @@ async def receivers_data(request: Request) -> StreamingResponse:
     return response
 
 
-def check_service_status(service_name):
-    try:
-        output = subprocess.check_output(f"systemctl status {service_name}", shell=True)
-        return "active" in output.decode("utf-8")
-    except Exception:
-        return False
+def find_services(substring):
+    process = subprocess.run(['systemctl', 'list-units', '--type=service', '--state=active'], capture_output=True, text=True)
+    services = process.stdout.splitlines()
+
+    filtered_services = [service for service in services if substring in service]
+
+    return filtered_services
 
 
-@app.post("/getTopicList")
+@app.get("/getTopicList")
 async def get_topic_list():
     response = {"topics": []}
 
-    extract_path = os.path.join(main_path, "rnx_files")
+    active_publisher_services = find_services('_publisher')
 
-    for filename in os.listdir(extract_path):
-        filepath = os.path.join(extract_path, filename).replace('\\', '/')
+    for service in active_publisher_services:
+        response['topics'].append(f"thread_sim/{service.split()[0][0:11]}")
 
-        if check_service_status(filename[0:11]):
-            response['topics'].append(f"thread_sim/{filename}")
+    return response
