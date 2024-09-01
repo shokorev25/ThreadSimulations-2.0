@@ -17,7 +17,7 @@ def services(archive_name, main_path):
     if not os.path.isfile(service_file):
         with open(service_file, "w") as f:
             with open(f"{main_path}/sample.txt", "r") as template:
-                path_to_publisher = os.path.join(main_path, "python", "publisher.py")
+                path_to_publisher = os.path.join(main_path, "publisher.py")
                 text = template.read().replace('ExecStart=/usr/bin/python3',
                                                f'ExecStart=/usr/bin/python3 {path_to_publisher} {archive_name}')
                 f.write(text)
