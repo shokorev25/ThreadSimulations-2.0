@@ -1,12 +1,27 @@
 import os
+import subprocess
+import zipfile
 import requests
 import sys
-import zipfile
 import gzip
-import subprocess
+import time
+from services import services
 
-def downloading(date, mainpath):
-    file_name = f"{mainpath}/data/{date[0:4]}/{date[5:]}.zip"
+date = sys.argv[1]
+
+
+main_path = os.path.abspath(os.path.join(os.path.dirname(__file__))).replace('\\', '/')
+
+
+def downloading():
+    if not(os.path.exists(f"{main_path}/data")):
+        os.mkdir(f"{main_path}/data")
+
+    if not(os.path.exists(f"{main_path}/data/{date[0:4]}")):
+        os.mkdir(f"{main_path}/data/{date[0:4]}")
+
+
+    file_name = f"{main_path}/data/{date[0:4]}/{date[5:]}.zip"
     link = f"https://api.simurg.space/datafiles/map_files?date={date}"
 
     start_byte = 0
@@ -37,22 +52,44 @@ def downloading(date, mainpath):
 
     return True
 
-def main(date_str):
-    # mainpath = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    mainpath = "C:/Users/Admin/OneDrive/Рабочий стол/Practice"
 
-    try:
-        downloading(date_str, mainpath)
-    except Exception as exp:
-        print("Сбой загрузки", exp)
-        exit()
+def main():
+    attempt = 0
+    check = False
 
-    zip_path = os.path.join(mainpath, "data", date_str[:4], date_str[5:] + ".zip")
-    extract_path = os.path.join(mainpath, "data", date_str[:4], date_str[5:])
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        zip_ref.extractall(extract_path)
+    # while attempt < 3:
+    #     try:
+    #         check = downloading()
+    #         break
+    #     except Exception as exp:
+    #         print(exp)
+    #         if not check:
+    #             time.sleep(30)
+    #             attempt += 1
+    #         else:
+    #             break
 
-    for filename in os.listdir(extract_path):
+    # if not check:
+    #     print("Сбой загрузки")
+    #     exit()
+
+    zip_path = os.path.join(main_path, "data", date[:4], date[5:] + ".zip")
+    extract_path = os.path.join(main_path, "data", date[:4], date[5:])
+    # with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+    #     zip_ref.extractall(extract_path)
+
+    if not (os.path.exists(f"{main_path}/rnx_files")):
+        os.mkdir(f"{main_path}/rnx_files")
+
+    if not (os.path.exists(f"{main_path}/txt_files")):
+        os.mkdir(f"{main_path}/txt_files")
+
+    file_list = os.listdir(extract_path)
+
+    file_list.sort()
+
+    for filename in file_list:
+
         filepath = os.path.join(extract_path, filename).replace('\\', '/')
         if filename.endswith(".crx.gz"):
 
@@ -60,17 +97,17 @@ def main(date_str):
                 with open(filepath[:-3], 'wb') as f_out:
                     f_out.write(f_in.read())
 
-            buf = filename[:-3]
-            subprocess.run([os.path.join(mainpath, "python", "CRX2RNX.exe").replace('\\', '/'),
-                            os.path.join(mainpath, "data", date_str[:4], date_str[5:], buf).replace('\\', '/')])
+            filename2 = filename.replace('.gz', '')
+            subprocess.run([os.path.join(main_path, "CRX2RNX").replace('\\', '/'),
+                            os.path.join(main_path, "data", date[:4], date[5:], filename2).replace('\\', '/')])
 
-            buf = buf[:-4]
-            buf += ".rnx"
+            filename2 = filename2.replace('.crx', '.rnx')
 
-            os.rename(os.path.join(mainpath, "data", date_str[:4], date_str[5:], buf).replace('\\', '/'),
-                      os.path.join(mainpath, "rnx_files", buf).replace('\\', '/'))
+            print(filename2)
 
-date = '2023-01-03'
-# date = sys.argv[1]
+            os.rename(os.path.join(main_path, "data", date[:4], date[5:], filename2).replace('\\', '/'),
+                      os.path.join(main_path, "rnx_files", filename2).replace('\\', '/'))
 
-main(date)
+            services(filename2[0:11], main_path)
+
+main()
