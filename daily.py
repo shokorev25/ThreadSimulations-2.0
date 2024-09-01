@@ -13,7 +13,8 @@ from services import services
 
 date = sys.argv[1]
 
-main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace('\\', '/')
+main_path = os.path.abspath(os.path.join(os.path.dirname(__file__))).replace('\\', '/')
+
 
 def downloading():
     if not(os.path.exists(f"{main_path}/data/{date[0:4]}")):
@@ -37,7 +38,7 @@ def downloading():
         dl = start_byte
 
         if total_length:
-            for data in response.iter_content(chunk_size=4096):
+            for data in response.iter_content(chunk_size=4095):
                 dl += len(data)
                 f.write(data)
                 done = int(50 * dl / total_length)
@@ -51,6 +52,7 @@ def downloading():
 
     return True
 
+
 def clean_folder(folder_name):
     for filename in os.listdir(folder_name):
         file_path = os.path.join(folder_name, filename)
@@ -59,18 +61,19 @@ def clean_folder(folder_name):
         elif os.path.isdir(file_path):
             shutil.rmtree(file_path)
 
+
 def daily_downloading():
     global date
-    date = (datetime.datetime.strptime(date, '%Y-%m-%d') + datetime.timedelta(days=1)).strftime("%H:%M:%S")
+    date = (datetime.datetime.strptime(date, '%Y-%m-%d') + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
     clean_folder(os.path.join(main_path, 'rnx_files'))
-
     attempt = 0
     check = False
 
     while attempt < 3:
         try:
             check = downloading()
+            break
         except Exception as exp:
             print(exp)
             if not(check):
@@ -89,8 +92,12 @@ def daily_downloading():
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(extract_path)
 
-    # Обработка файлов
-    for filename in os.listdir(extract_path):
+    file_list = os.listdir(extract_path)
+
+    file_list.sort()
+
+    for filename in file_list:
+
         filepath = os.path.join(extract_path, filename).replace('\\', '/')
         if filename.endswith(".crx.gz"):
             with gzip.open(filepath, 'rb') as f_in:
@@ -98,15 +105,16 @@ def daily_downloading():
                     f_out.write(f_in.read())
 
             filename2 = filename.replace('.gz', '')
-            subprocess.run([os.path.join(main_path, "python", "CRX2RNX.exe").replace('\\', '/'),
+            subprocess.run([os.path.join(main_path, "CRX2RNX").replace('\\', '/'),
                             os.path.join(main_path, "data", date[:4], date[5:], filename2).replace('\\', '/')])
 
-            filename2 = filename.replace('.crx', '.rnx')
+            filename2 = filename2.replace('.crx', '.rnx')
 
             os.rename(os.path.join(main_path, "data", date[:4], date[5:], filename2).replace('\\', '/'),
                       os.path.join(main_path, "rnx_files", filename2).replace('\\', '/'))
 
-            services(filename2, main_path)
+            services(filename2[0:11], main_path)
+
 
 schedule.every().day.at("22:00").do(daily_downloading)
 
