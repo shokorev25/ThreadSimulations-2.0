@@ -57,26 +57,26 @@ def main():
     attempt = 0
     check = False
 
-    # while attempt < 3:
-    #     try:
-    #         check = downloading()
-    #         break
-    #     except Exception as exp:
-    #         print(exp)
-    #         if not check:
-    #             time.sleep(30)
-    #             attempt += 1
-    #         else:
-    #             break
+    while attempt < 3:
+        try:
+            check = downloading()
+            break
+        except Exception as exp:
+            print(exp)
+            if not check:
+                time.sleep(30)
+                attempt += 1
+            else:
+                break
 
-    # if not check:
-    #     print("Сбой загрузки")
-    #     exit()
+    if not check:
+        print("Сбой загрузки")
+        exit()
 
     zip_path = os.path.join(main_path, "data", date[:4], date[5:] + ".zip")
     extract_path = os.path.join(main_path, "data", date[:4], date[5:])
-    # with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    #     zip_ref.extractall(extract_path)
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_path)
 
     if not (os.path.exists(f"{main_path}/rnx_files")):
         os.mkdir(f"{main_path}/rnx_files")
