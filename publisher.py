@@ -2,16 +2,19 @@ import paho.mqtt.client as mqtt_client
 import hashlib
 import datetime
 import sys
-# import systemd.daemon
+import systemd.daemon
 import os
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from gnss_tec import rnx
 
-main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")).replace('\\', '/')
-# filename = sys.argv[1]
-filename = "ABPO00MDG_R_20230020000_01D_30S_MO.rnx"
+systemd.daemon.notify('READY=1')
+
+
+main_path = os.path.abspath(os.path.join(os.path.dirname(__file__))).replace('\\', '/')
+filename = sys.argv[1]
+
 
 will_stop = False
 check_fullpath = ''
@@ -27,7 +30,7 @@ def get_data():
     for file in os.listdir(extract_path):
         if filename in file:
             fullpath = os.path.join(main_path, 'rnx_files', file)
-            check_fullpath = fullpath
+            check_fullpath = fullpath.replace('\\', '/')
 
     try:
         with open(fullpath) as obs_file:
@@ -56,7 +59,7 @@ def update_check_fullpath():
 
     for file in os.listdir(extract_path):
         if filename[0:11] in file:
-            check_fullpath = os.path.join(main_path, 'rnx_files', file)
+            check_fullpath = os.path.join(main_path, 'rnx_files', file).replace('\\', '/')
 
 
 def check_new_data():
@@ -66,8 +69,7 @@ def check_new_data():
 
     for file in os.listdir(extract_path):
         if filename[0:11] in file:
-            if check_fullpath != os.path.join(main_path, 'rnx_files', file):
-                check_fullpath = os.path.join(main_path, 'rnx_files', file)
+            if check_fullpath != os.path.join(main_path, 'rnx_files', file).replace('\\', '/'):
                 return True
             else:
                 return False
@@ -85,7 +87,7 @@ def update_data():
     for file in os.listdir(extract_path):
         if filename[0:11] in file:
             fullpath = os.path.join(main_path, 'rnx_files', file)
-            check_fullpath = fullpath
+            check_fullpath = fullpath.replace('\\', '/')
 
     data = []
     try:
@@ -137,7 +139,6 @@ def round_time(dt):
     rounding_seconds = ((seconds + round_to - 1) // round_to) * round_to
 
     result = dt + datetime.timedelta(seconds=rounding_seconds - seconds)
-    # return "23:59:30"
     return result.strftime("%H:%M:%S")
 
 
@@ -165,7 +166,7 @@ def publishing():
 
         if parsing_current_time == text.split()[1] and datetime.datetime.now().strftime("%S") != "27"\
                 and datetime.datetime.now().strftime("%S") != "57":
-            client.publish("info/" + filename[0:11], text)
+            client.publish("thread_sim/" + filename[0:11], text)
             write_data(text, False)
         else:
             wait_time = round_time(datetime.datetime.now())
@@ -178,14 +179,16 @@ def publishing():
             while datetime.datetime.now().strftime("%H:%M:%S") != wait_time:
                 time.sleep(0.001)
 
-                if datetime.datetime.now().strftime("%H") == 22 and not updated:
-                    update_check_fullpath()
-                    updated = True
+            now_hour = datetime.datetime.now().strftime("%H")
+            if (now_hour == '22' or now_hour == '23') and check_new_data() and not updated:
+                update_check_fullpath()
+                updated = True
 
-                if wait_time.endswith('00') and check_new_data():
-                    return True
+            if wait_time.endswith('00') and check_new_data():
+                update_check_fullpath()
+                return True
 
-            client.publish("info/" + filename[0:11], text)
+            client.publish("thread_sim/" + filename[0:11], text)
             write_data(text, True)
 
         print("message is " + text)
@@ -195,14 +198,15 @@ def publishing():
 
 new_data = get_data()
 
-# if datetime.datetime.now().strftime("%H") == "23" or datetime.datetime.now().strftime("%H") == "22":
-#     while datetime.datetime.now().strftime("%H:%M:%S") != "23:59:35":
-#         time.sleep(0.001)
+if datetime.datetime.now().strftime("%H") == "23" or datetime.datetime.now().strftime("%H") == "22":
+   while datetime.datetime.now().strftime("%H:%M:%S") != "23:59:35":
+       time.sleep(0.001)
+
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_data, trigger=CronTrigger(hour=23, minute=50))
 scheduler.start()
-# systemd.daemon.notify('READY=1')
+
 
 client = broker_setup()
 
