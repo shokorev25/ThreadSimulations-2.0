@@ -36,6 +36,7 @@
 mkdir thread_sim
 cd thread_sim
 git clone https://github.com/shokorev25/ThreadSimulations-2.0
+cd ThreadSimulations-2.0
 chmod +x CRX2RNX
 ```
 2) Установите pip и зависимости, которые находятся в файле `requirements.txt`:
